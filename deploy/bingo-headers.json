@@ -1,0 +1,17 @@
+{
+  "Name": "buzzword-bingo-headers",
+  "Comment": "Buzzword Bingo (/bingo*): security headers to match RT Trainer, Flight Log and Pollyglot",
+  "SecurityHeadersConfig": {
+    "StrictTransportSecurity": { "Override": true, "AccessControlMaxAgeSec": 31536000, "IncludeSubdomains": false, "Preload": false },
+    "ContentTypeOptions": { "Override": true },
+    "FrameOptions": { "Override": true, "FrameOption": "DENY" },
+    "ReferrerPolicy": { "Override": true, "ReferrerPolicy": "same-origin" },
+    "ContentSecurityPolicy": { "Override": true, "ContentSecurityPolicy": "default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" }
+  },
+  "CustomHeadersConfig": {
+    "Quantity": 1,
+    "Items": [
+      { "Header": "Permissions-Policy", "Value": "camera=(), geolocation=(), microphone=()", "Override": true }
+    ]
+  }
+}

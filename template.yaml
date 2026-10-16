@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Buzzword Bingo API (https://crystalmark.co.uk/bingo/api/*) - one Lambda, one DynamoDB table, an HTTP API
+
+# The page itself is static, in the crystalmark.co.uk bucket under bingo/ (deploy/deploy.sh). CloudFront sends
+# /bingo/api/* to the HTTP API here (deploy/cloudfront.sh), adding an X-Origin-Secret header the Lambda checks, so the
+# raw execute-api URL can't be used to get round CloudFront.
+
+Parameters:
+  OriginSecret:
+    Type: String
+    NoEcho: true
+    Description: >
+      Shared secret CloudFront sends as X-Origin-Secret. Kept in SSM (/buzzword-bingo/origin-secret) and passed in by
+      deploy/api.sh; you don't set it by hand.
+
+Globals:
+  Function:
+    Runtime: nodejs24.x
+    Architectures: [arm64]
+    MemorySize: 256
+    Timeout: 10
+
+Resources:
+
+  # Games and players, keyed by game code; TTL on `expires` clears finished games away
+  BingoTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: buzzword-bingo
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: pk, AttributeType: S }
+        - { AttributeName: sk, AttributeType: S }
+      KeySchema:
+        - { AttributeName: pk, KeyType: HASH }
+        - { AttributeName: sk, KeyType: RANGE }
+      TimeToLiveSpecification:
+        AttributeName: expires
+        Enabled: true
+
+  BingoApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      # Generous for meetings, tight enough that nobody can run up a bill: every player polls every 3 s
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 100
+        ThrottlingRateLimit: 50
+
+  BingoFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: buzzword-bingo-api
+      Handler: index.handler
+      CodeUri: lambda/
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref BingoTable
+          ORIGIN_SECRET: !Ref OriginSecret
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BingoTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref BingoApi
+            Path: /bingo/api/{proxy+}
+            Method: ANY
+
+  BingoFunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${BingoFunction}
+      RetentionInDays: 14
+
+Outputs:
+  ApiDomain:
+    Description: The HTTP API's domain, CloudFront's origin for /bingo/api/*
+    Value: !Sub ${BingoApi}.execute-api.${AWS::Region}.amazonaws.com

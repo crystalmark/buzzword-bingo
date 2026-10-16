@@ -1,0 +1,12 @@
+{
+  "name": "buzzword-bingo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Buzzword Bingo for meetings: start a game, share the code, first to a line wins. https://crystalmark.co.uk/bingo/",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "test": "node --test test/*.test.mjs"
+  }
+}

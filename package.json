@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Buzzword Bingo for meetings: start a game, share the code, first to a line wins. https://crystalmark.co.uk/bingo/",
+  "license": "MIT",
   "engines": { "node": ">=22" },
   "scripts": {
     "start": "node scripts/serve.mjs",

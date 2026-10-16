@@ -43,3 +43,7 @@ deploy/deploy.sh       # the page (tests first)
 `deploy/cloudfront.sh --remove` takes the behaviours and origin off the distribution again.
 
 To change the words, edit `WORDS` in `lambda/game.mjs` and run both `deploy/api.sh` and `deploy/deploy.sh`.
+
+## Licence
+
+MIT (see `LICENSE`).

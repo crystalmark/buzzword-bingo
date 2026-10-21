@@ -30,8 +30,9 @@ createServer(async (req, res) => {
   if (url.pathname === '/' || url.pathname === '/bingo') return res.writeHead(301, { location: '/bingo/' }).end();
   if (!url.pathname.startsWith('/bingo/')) return res.writeHead(404).end('Not found');
   const rel = pageFor(url.pathname).slice('/bingo/'.length);
-  // game.mjs lives with the Lambda; deploy/deploy.sh copies it to js/ for the site
-  const file = rel === 'js/game.mjs' ? join(ROOT, 'lambda/game.mjs') : join(ROOT, 'public', normalize(rel).replace(/^(\.\.[/\\])+/, ''));
+  // The rules and the words live with the Lambda; deploy/deploy.sh copies them to js/ for the site
+  const shared = ['js/game.mjs', 'js/themes.mjs'].includes(rel);
+  const file = shared ? join(ROOT, 'lambda', rel.slice(3)) : join(ROOT, 'public', normalize(rel).replace(/^(\.\.[/\\])+/, ''));
   try {
     res.writeHead(200, { 'content-type': TYPES[extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-cache' })
       .end(await readFile(file));

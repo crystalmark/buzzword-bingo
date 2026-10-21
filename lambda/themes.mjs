@@ -1,0 +1,147 @@
+// The kinds of bingo: each has its own words, and a line or two for the home page. Shared by the Lambda (which deals
+// group cards) and the browser (solo cards, and the picker); deploy/deploy.sh copies this file to /bingo/js/.
+// A game's theme is fixed when it starts. Add a theme here and it appears in the picker; ids are stored with games,
+// so don't rename one. Keep each word short enough for a phone-width square (the tests check), and at least 40 of them.
+
+export const DEFAULT_THEME = 'business';
+
+export const THEMES = {
+  business: {
+    name: 'Business',
+    kicker: 'Meeting survival kit',
+    blurb: 'Cheesy corporate jargon for the all-hands, the stand-up and the meeting that could have been an email.',
+    free: 'Free square ☕',
+    words: [
+      'Synergy', 'Circle back', 'Low-hanging fruit', 'Move the needle', 'Deep dive', 'Touch base', 'Blue-sky thinking',
+      'Think outside the box', 'Paradigm shift', 'Leverage', 'Bandwidth', 'Take it offline', 'Ducks in a row',
+      'Boil the ocean', 'Run it up the flagpole', 'Helicopter view', 'Drill down', 'Game changer', 'Win-win',
+      'Going forward', 'Quick win', 'Ballpark figure', 'Pivot', 'Disrupt', 'Thought leadership', 'Best practice',
+      'Core competency', 'Value add', 'Holistic', 'Agile', 'Actionable insights', 'Deliverables', 'Stakeholder buy-in',
+      'Mission-critical', 'Scalable', 'Seamless', 'Ecosystem', 'Empower', 'On a journey', 'North star',
+      'Single source of truth', 'Lots of moving parts', 'Herding cats', 'Peel the onion', 'Parking lot',
+      'Let’s unpack that', 'Hard stop', 'Ping me', 'Loop you in', 'Reach out', 'Granular', 'Learnings',
+      'The ask', 'Double-click on that', 'Level set', 'Pain point', 'Tiger team', 'Swim lane', 'Hit the ground running',
+      'Heavy lifting', 'Secret sauce', 'Skin in the game', 'Bleeding edge', 'Next-gen', 'Best-in-class', 'World-class',
+      'Key takeaways', 'On my radar', 'Put a pin in it', 'Bake it in', 'Socialise it', 'Sense check', 'Wash its face',
+      'Joined-up thinking', 'Direction of travel', 'Piece of work', 'Across the piece', 'Horizon scanning',
+      'Lessons learned', 'Spin up', 'MVP', 'Pushback', 'Bring to the table', 'Mindshare', 'Lean in', 'Wheelhouse',
+      'Elevator pitch', 'Alignment', 'Transformation', 'Digital-first', 'AI-powered', 'Hockey stick', 'Runway',
+      'Burning platform', 'Can you see my screen?', 'You’re on mute', 'Sorry, go ahead', 'Bear with',
+      'I’ll keep this brief', 'Any other business?', 'Just to piggyback', 'Per my last email', 'Reinvent the wheel',
+      'Rightsizing', 'Cadence', 'Ideate', 'Operationalise', 'Bottleneck', 'Headwinds', 'Tailwinds', 'Data-driven',
+      'Customer-centric', 'Future-proof', 'Fail fast', 'Net-net', 'At the end of the day', 'Cross-functional',
+      'Proactive', 'Out of the gate', 'Open the floodgates', 'Gain traction', 'Hearts and minds',
+      'Take it to the next level', 'Laser focus', 'Above my pay grade', 'Drink our own champagne',
+    ],
+  },
+
+  physics: {
+    name: 'Physics',
+    kicker: 'Lecture survival kit',
+    blurb: 'Spherical cows, frictionless planes and everything “left as an exercise”. For lectures, tutorials and problem classes.',
+    free: 'Free square ⚛',
+    words: [
+      'Spherical cow', 'Assume frictionless', 'Ignore air resistance', 'Left as an exercise', 'It can be shown',
+      'Trivially', 'Obviously', 'Clearly', 'Without loss of generality', 'To first order', 'Small-angle approximation',
+      'Order of magnitude', 'Back of the envelope', 'Dimensional analysis', 'Let’s set c = 1', 'Natural units',
+      'Up to a constant', 'In the limit', 'Negligible', 'Hand-waving', 'Taylor expand', 'Boundary conditions',
+      'Eigenvalue', 'Hamiltonian', 'Lagrangian', 'Harmonic oscillator', 'Free-body diagram', 'Fourier transform',
+      'Superposition', 'Wave–particle duality', 'Schrödinger’s cat', 'Uncertainty principle', 'Entropy',
+      'Ideal gas', 'Point particle', 'Thought experiment', 'Conservation of energy', 'Symmetry', 'Noether’s theorem',
+      'Black body', 'Dark matter', 'Perturbation theory', 'Error bars', 'Orthogonal', 'Commutator', 'Bra-ket',
+      'Phase space', 'Planck’s constant', 'Thermal equilibrium', 'Steady state', 'Massless', 'Inertial frame',
+      'Non-trivial', 'Beautiful result', 'Fermi estimate', 'Vector calculus', 'Divergence', 'Curl', 'Gradient',
+      'Partition function', 'Feynman', 'Einstein', 'Spherically symmetric', 'Simple harmonic motion', 'Normalise it',
+      'Units!', 'Plot it on a log scale', 'Linear regime', 'Recall from last week', 'This will be on the exam',
+      'Integrate by parts', 'Separation of variables', 'Lab report', 'Systematic error', 'Approximately one',
+    ],
+  },
+
+  chemistry: {
+    name: 'Chemistry',
+    kicker: 'Lab coat optional',
+    blurb: 'Moles, mechanisms and curly arrows. For lectures, labs and anyone who has ever had to balance an equation.',
+    free: 'Free square ⚗',
+    words: [
+      'Mole', 'Avogadro', 'Stoichiometry', 'Equilibrium', 'Le Chatelier', 'Catalyst', 'Exothermic', 'Endothermic',
+      'Activation energy', 'Redox', 'Oxidation state', 'Electronegativity', 'Covalent', 'Ionic', 'Van der Waals',
+      'Hydrogen bonding', 'Lone pair', 'Orbital', 'Hybridisation', 'Chirality', 'Enantiomer', 'Isomer', 'Nucleophile',
+      'Electrophile', 'Leaving group', 'Curly arrows', 'Mechanism', 'Benzene ring', 'Aromatic', 'Functional group',
+      'Titration', 'Fume cupboard', 'Safety goggles', 'pH', 'Buffer', 'Concentration', 'Yield', 'Recrystallise',
+      'Spectroscopy', 'NMR', 'Mass spec', 'Rate-determining step', 'Gibbs free energy', 'Enthalpy', 'Entropy',
+      'Standard conditions', 'Periodic table', 'Noble gas', 'Valence electrons', 'Octet rule', 'Lab coat',
+      'Risk assessment', 'Precipitate', 'Solvent', 'Reflux', 'Distillation', 'Polymer', 'Half-equation',
+      'Limiting reagent', 'Percentage yield', 'Bunsen burner', 'Significant figures', 'It’s all about the electrons',
+      'Transition metal', 'Ligand', 'Kinetics', 'Thermodynamics', 'Dilute', 'Anhydrous', 'Steric hindrance',
+      'Resonance', 'Dipole', 'Le Chatelier strikes again', 'Write it in your lab book', 'Balance the equation',
+    ],
+  },
+
+  surgery: {
+    name: 'Medical: at the surgery',
+    kicker: 'Waiting-room wisdom',
+    blurb: 'The classics heard across the consulting-room desk. For the practice team — no patient details go in, just your name.',
+    free: 'Free square 🩺',
+    words: [
+      'I googled it', 'Dr Google says…', 'It’s probably nothing', 'While I’m here…', 'Just a quick one',
+      'I didn’t want to bother you', 'I’ve brought a list', 'It comes and goes', 'It’s been going on for ages',
+      'It’s worse at night', 'My mate had the same', 'My mum thinks it’s…', 'Can I have antibiotics?',
+      'I’ve not been myself', 'I’m not one to complain', 'It’s my back again', 'I’ve been run down',
+      'It’s that bug going round', 'I couldn’t get an appointment', 'Can you sign this form?', 'I need a fit note',
+      'Repeat prescription', 'I stopped taking them', 'Is it serious?', 'I feel fine now', 'It was worse yesterday',
+      'I’ve tried everything', 'Paracetamol didn’t touch it', 'I’m off on holiday Friday', 'Pain’s an eleven',
+      'Sorry, it’s a bit embarrassing', 'I read about it online', 'It’s not like me', 'I only drink at weekends',
+      'I eat really healthily', 'Can you look at this too?', 'It’s the stress', 'Is it my thyroid?',
+      'Could it be hormones?', 'Can I have a blood test?', 'The other doctor said…', 'Just checking it’s nothing',
+      'I had a funny turn', 'I’ve got a rash', 'I can’t sleep', 'Tired all the time', 'A bit of a twinge',
+      'A niggle', 'It’s gone now, typically', 'Receptionist said to ask you', 'Can you see my husband too?',
+      'It’s in the family', 'I’ve been on the internet', 'I’ve run out', 'It started after the jab',
+      'I’ll be quick', 'I’ve had a cold for weeks', 'Pins and needles', 'Dizzy spells', 'A funny feeling',
+    ],
+  },
+
+  lectures: {
+    name: 'Medical: lectures',
+    kicker: 'Ward round warm-up',
+    blurb: 'Red flags, differentials and NICE guidelines. For medical school lectures, teaching sessions and journal club.',
+    free: 'Free square 🩺',
+    words: [
+      'Differential diagnosis', 'Red flags', 'Idiopathic', 'Aetiology', 'Evidence-based', 'Multidisciplinary team',
+      'Holistic care', 'Contraindicated', 'First-line treatment', 'NICE guidelines', 'Gold standard',
+      'Clinical judgement', 'Common things are common', 'Horses, not zebras', 'Watch and wait', 'Safety-netting',
+      'Bloods', 'ABCDE', 'Pathognomonic', 'Asymptomatic', 'Comorbidities', 'Polypharmacy', 'Informed consent',
+      'Capacity', 'Side-effect profile', 'Randomised controlled trial', 'Meta-analysis', 'Number needed to treat',
+      'Sensitivity', 'Specificity', 'Prognosis', 'Acute on chronic', 'Self-limiting', 'Benign', 'Iatrogenic',
+      'Bilateral', 'Presenting complaint', 'The history is the diagnosis', 'Examine the patient', 'Escalate',
+      'SBAR', 'Handover', 'Ward round', 'OSCE', 'Bedside manner', 'Patient-centred', 'Shared decision-making',
+      'Rule out', 'Clinically significant', 'Pathophysiology', 'Mechanism of action', 'Half-life', 'Dose-dependent',
+      'Statistically significant', 'Confounder', 'Exam favourite', 'Treat the patient, not the numbers',
+      'Senior review', 'Sepsis six', 'Early warning score', 'Systemic', 'Insidious onset', 'Classic triad',
+      'Mnemonic', 'Anatomy recap', 'Case study',
+    ],
+  },
+
+  film: {
+    name: 'Movies & film',
+    kicker: 'Popcorn not included',
+    blurb: 'Every cliché in the book, ready for movie night. Mark them as they happen on screen.',
+    free: 'Free square 🍿',
+    words: [
+      'Plot twist', 'Cliffhanger', 'Based on a true story', 'Post-credits scene', 'Slow-motion walk', 'Montage',
+      'Training montage', 'The chosen one', 'It was all a dream', 'Villain monologue', '“Enhance!”',
+      'Red wire or blue wire?', 'Walks away from explosion', 'Car won’t start', 'Jump scare', 'Love triangle',
+      'Mentor dies', 'Meet-cute', 'Airport dash', 'Hacker in a hoodie', 'Dramatic pause', 'Shaky cam', 'Lens flare',
+      'Breaks the fourth wall', 'Voiceover', 'Flashback', 'Dream sequence', 'Evil twin', 'Countdown timer',
+      'Last-minute rescue', 'Assembling the crew', 'One last job', 'Cameo', 'Stunt double', 'Green screen',
+      'Cut to black', 'Mistaken identity', 'Fish out of water', 'Unlikely friendship', 'Mirror scare',
+      'Kiss in the rain', 'Slow clap', 'Chase scene', 'Rooftop showdown', 'Don’t split up!', 'Phone has no signal',
+      'Fake-out death', 'Character looks at camera', 'Sequel bait', 'Reboot', 'Origin story', 'Trilogy',
+      'Running from a fireball', 'Bad guy’s henchmen miss', 'Big speech before battle', 'Dog survives',
+      'Wise old mentor', 'The power of friendship', 'Ticking clock', 'Small-town secret', 'Twist villain',
+      'Opens with a flash-forward', '“We’ve got company”', 'Sunset ending', 'Tears in the rain',
+    ],
+  },
+};
+
+export const isTheme = id => typeof id === 'string' && Object.hasOwn(THEMES, id);
+export const themeOf = id => THEMES[isTheme(id) ? id : DEFAULT_THEME];

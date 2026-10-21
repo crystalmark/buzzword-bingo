@@ -63,6 +63,24 @@ h1 em { font-style: italic; font-weight: 300; color: var(--orange); }
 .lede { margin-top: 26px; max-width: 54ch; font-size: 20px; font-weight: 300; color: var(--ink-soft); }
 .lede strong { color: var(--ink); font-weight: 560; }
 
+/* ---------- theme picker ---------- */
+.themes { border: 0; margin: -12px 0 28px; }
+.themes legend {
+  font: 500 11px var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 12px;
+}
+.theme-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.theme-list label { flex-direction: row; letter-spacing: 0.06em; }
+.theme-list input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.theme-list span {
+  display: inline-block; padding: 9px 14px; border: 1.5px solid var(--ink); background: var(--paper);
+  font: 500 12.5px var(--mono); color: var(--ink); cursor: pointer; transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+.theme-list span:hover { box-shadow: 3px 3px 0 var(--orange); }
+.theme-list input:checked + span { background: var(--ink); color: var(--paper); box-shadow: 3px 3px 0 var(--orange); }
+.theme-list input:focus-visible + span { outline: 2px solid var(--orange); outline-offset: 2px; }
+.theme-blurb { margin-top: 14px; max-width: 64ch; font-size: 16px; color: var(--ink-soft); min-height: 3.1em; }
+.invite-theme { margin-top: 14px; font: 500 13px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--orange); }
+
 /* ---------- home panels ---------- */
 .panels {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;

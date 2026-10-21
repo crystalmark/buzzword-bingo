@@ -1,7 +1,8 @@
-// Buzzword Bingo in the browser. Routes on the path: /bingo/ (home), /bingo/solo, /bingo/<CODE> (a group game).
+// Buzzword Bingo in the browser. Routes on the path: /bingo/ (home), /bingo/solo/<theme>, /bingo/<CODE> (a group game).
 // In a group game the server deals the card and keeps score; this polls it every few seconds for the room's progress.
 // The token that proves you're you in a game is kept in localStorage, so a reload or a closed tab puts you back in.
-import { FREE, FREE_LABEL, deal, normaliseMarks, toggle, isMarked, completeLine, needed } from './game.mjs';
+import { FREE, deal, normaliseMarks, toggle, isMarked, completeLine, needed } from './game.mjs';
+import { THEMES, DEFAULT_THEME, isTheme, themeOf } from './themes.mjs';
 
 const API = '/bingo/api';
 const POLL_VISIBLE = 3000;
@@ -16,6 +17,8 @@ const saved = {
   drop(code) { try { localStorage.removeItem('bingo:' + code); } catch { /* nothing to drop */ } },
   get name() { try { return localStorage.getItem('bingo:name') ?? ''; } catch { return ''; } },
   set name(v) { try { localStorage.setItem('bingo:name', v); } catch { /* fine */ } },
+  get theme() { try { const t = localStorage.getItem('bingo:theme'); return isTheme(t) ? t : DEFAULT_THEME; } catch { return DEFAULT_THEME; } },
+  set theme(v) { try { localStorage.setItem('bingo:theme', v); } catch { /* fine */ } },
 };
 
 async function api(method, path, { body, token } = {}) {
@@ -51,7 +54,7 @@ function show(view) {
 // ---------- the card ----------
 
 // What's on screen: a card, its marks, and (in a group game) which round it belongs to
-let play = null; // { mode: 'solo' | 'group', card, marks, round?, code?, token?, lineAt? }
+let play = null; // { mode: 'solo' | 'group', theme, card, marks, round?, code?, token? }
 let celebrated = false;
 
 function buildCard() {
@@ -65,7 +68,7 @@ function buildCard() {
     b.className = 'cell' + (i === FREE ? ' free' : '') + (long ? ' long' : '');
     const w = document.createElement('span');
     w.className = 'w';
-    w.textContent = word ?? FREE_LABEL;
+    w.textContent = word ?? themeOf(play.theme).free;
     b.append(w);
     b.addEventListener('click', () => mark(i));
     el.append(b);
@@ -117,6 +120,7 @@ async function mark(i) {
 // ---------- group game ----------
 
 function renderGame(s) {
+  play.theme = s.theme;
   if (s.you && (s.round !== play.round || !play.card)) {
     Object.assign(play, { card: s.you.card, marks: s.you.marks, round: s.round });
     buildCard();
@@ -127,7 +131,8 @@ function renderGame(s) {
   }
   play.host = s.you?.host;
   $('strip-game').innerHTML = '';
-  $('strip-game').append('Game ', Object.assign(document.createElement('strong'), { textContent: s.code }), ` · Round ${s.round}`);
+  $('strip-game').append('Game ', Object.assign(document.createElement('strong'), { textContent: s.code }),
+    ` · ${themeOf(s.theme).name} · Round ${s.round}`);
   $('btn-new-round').hidden = !play.host;
 
   // The banner: who called it first, and with what
@@ -198,7 +203,7 @@ function enterGame(code, token, s) {
   $('share-code').textContent = code;
   $('share-url').value = shareUrl(code);
   $('btn-share').hidden = !navigator.share;
-  document.title = `Game ${code} — Buzzword Bingo`;
+  document.title = `Game ${code} · ${themeOf(s.theme).name} — Buzzword Bingo`;
   show('game');
   renderGame(s);
   poll();
@@ -206,15 +211,15 @@ function enterGame(code, token, s) {
 
 // ---------- solo ----------
 
-function enterSolo() {
+function enterSolo(theme) {
   clearTimeout(pollTimer);
-  play = { mode: 'solo', card: deal(randomInt), marks: normaliseMarks(0) };
+  play = { mode: 'solo', theme, card: deal(randomInt, theme), marks: normaliseMarks(0) };
   $('side').hidden = true;
   $('banner').hidden = true;
   $('btn-new-card').hidden = false;
   $('btn-new-round').hidden = true;
-  $('strip-game').textContent = 'Solo';
-  document.title = 'Solo — Buzzword Bingo';
+  $('strip-game').textContent = `Solo · ${themeOf(theme).name}`;
+  document.title = `Solo · ${themeOf(theme).name} — Buzzword Bingo`;
   show('game');
   buildCard();
 }
@@ -232,7 +237,8 @@ async function route() {
   $('strip-game').textContent = '';
   document.title = 'Buzzword Bingo — Crystalmark';
   const slug = location.pathname.replace(/^\/bingo\/?/, '').replace(/\/$/, '');
-  if (slug === 'solo') return enterSolo();
+  const solo = slug.match(/^solo(?:\/([a-z]+))?$/);
+  if (solo) return enterSolo(isTheme(solo[1]) ? solo[1] : saved.theme);
   if (/^[A-Za-z]{4}$/.test(slug)) {
     const code = slug.toUpperCase();
     if (slug !== code) history.replaceState(null, '', `/bingo/${code}`);
@@ -242,6 +248,7 @@ async function route() {
       if (s.you) return enterGame(code, mine.token, s);
       saved.drop(code);
       $('invite-code').textContent = code;
+      $('invite-theme').textContent = `${themeOf(s.theme).name} bingo`;
       const names = s.players.map(p => p.name);
       $('invite-who').textContent = names.length === 1 ? `${names[0]} is waiting for you. Pick a name and you’ll get your own card.`
         : `${names.slice(0, -1).join(', ')} and ${names.at(-1)} are already playing. Pick a name and you’ll get your own card.`;
@@ -260,7 +267,25 @@ async function route() {
 
 function showHome() {
   for (const f of [$('form-start'), $('form-join')]) if (!f.name.value) f.name.value = saved.name;
+  pickTheme(saved.theme);
   show('home');
+}
+
+// The picker on the home page: the kind of bingo a new game, or a solo card, will be
+$('themes').replaceChildren(...Object.entries(THEMES).map(([id, t]) => {
+  const label = document.createElement('label');
+  const input = Object.assign(document.createElement('input'), { type: 'radio', name: 'theme', value: id });
+  input.addEventListener('change', () => { saved.theme = id; pickTheme(id); });
+  label.append(input, Object.assign(document.createElement('span'), { textContent: t.name }));
+  return label;
+}));
+const chosenTheme = () => document.querySelector('#themes input:checked')?.value ?? DEFAULT_THEME;
+function pickTheme(id) {
+  const t = themeOf(id);
+  document.querySelector(`#themes input[value="${isTheme(id) ? id : DEFAULT_THEME}"]`).checked = true;
+  $('home-kicker').textContent = t.kicker;
+  $('theme-blurb').textContent = t.blurb;
+  $('solo-link').setAttribute('href', `/bingo/solo/${chosenTheme()}`);
 }
 
 addEventListener('popstate', route);
@@ -282,7 +307,7 @@ function busy(form, fn) {
 
 $('form-start').addEventListener('submit', busy($('form-start'), async f => {
   saved.name = f.get('name').trim();
-  const s = await api('POST', '/games', { body: { name: f.get('name') } });
+  const s = await api('POST', '/games', { body: { name: f.get('name'), theme: chosenTheme() } });
   history.pushState(null, '', `/bingo/${s.code}`);
   enterGame(s.code, s.token, s);
 }));
@@ -312,10 +337,11 @@ $('btn-copy').addEventListener('click', async () => {
 $('share-url').addEventListener('focus', e => e.target.select());
 
 $('btn-share').addEventListener('click', () => {
-  navigator.share({ title: 'Buzzword Bingo', text: `Join my Buzzword Bingo game — code ${play.code}`, url: shareUrl(play.code) }).catch(() => {});
+  const text = `Join my game of Buzzword Bingo (${themeOf(play.theme).name}) — code ${play.code}`;
+  navigator.share({ title: 'Buzzword Bingo', text, url: shareUrl(play.code) }).catch(() => {});
 });
 
-$('btn-new-card').addEventListener('click', () => enterSolo());
+$('btn-new-card').addEventListener('click', () => enterSolo(play.theme));
 
 $('btn-new-round').addEventListener('click', async () => {
   if (!confirm('Deal everyone a fresh card and start a new round?')) return;

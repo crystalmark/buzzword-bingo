@@ -1,5 +1,5 @@
 // Buzzword Bingo API: one Lambda behind an HTTP API, reached through CloudFront at https://crystalmark.co.uk/bingo/api/*.
-//   POST /bingo/api/games                  {name}  start a game; you're its host        → 201 {token, ...state}
+//   POST /bingo/api/games           {name, theme}  start a game; you're its host        → 201 {token, ...state}
 //   POST /bingo/api/games/{code}/players   {name}  join one                              → 201 {token, ...state}
 //   GET  /bingo/api/games/{code}                   the room: everyone's progress, and your card if you send your token
 //   PUT  /bingo/api/games/{code}/marks     {marks} mark your card (a bitmask); the server notes when you get a line
@@ -7,7 +7,8 @@
 // Players prove who they are with the token they were given on joining, in X-Player-Token; only its hash is stored.
 // The server deals the cards and timestamps each player's first line, so "who called it first" isn't up to the browser.
 import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
-import { deal, normaliseMarks, completeLine, needed, FREE_LABEL } from './game.mjs';
+import { deal, normaliseMarks, completeLine, needed } from './game.mjs';
+import { DEFAULT_THEME, isTheme, themeOf } from './themes.mjs';
 import { dynamoStore } from './store.mjs';
 
 const CODE_LETTERS = 'BCDFGHJKLMNPQRSTVWXZ'; // no vowels, so no words, rude or otherwise; easy to read out on a call
@@ -39,13 +40,13 @@ function cleanName(name) {
   return n;
 }
 
-function newPlayer(name, expires) {
+function newPlayer(name, expires, theme) {
   const token = randomBytes(24).toString('base64url');
   return {
     token,
     player: {
       id: randomBytes(6).toString('base64url'), name, tokenHash: hash(token),
-      card: deal(randomInt), marks: normaliseMarks(0), line: null, lineAt: null, joinedAt: now(), expires,
+      card: deal(randomInt, theme), marks: normaliseMarks(0), line: null, lineAt: null, joinedAt: now(), expires,
     },
   };
 }
@@ -58,18 +59,20 @@ function findMe(players, token) {
 
 // What a player sees: everyone's name and progress (never their cards), and their own card
 function state(game, players, me) {
+  const { free } = themeOf(game.theme);
   const room = players
     .map(p => ({
       id: p.id,
       name: p.name,
       needed: needed(p.marks),
       lineAt: p.lineAt,
-      line: p.line && p.line.map(i => p.card[i] ?? FREE_LABEL),
+      line: p.line && p.line.map(i => p.card[i] ?? free),
       host: p.id === game.hostId,
     }))
     .sort((a, b) => (a.lineAt ?? Infinity) - (b.lineAt ?? Infinity) || a.needed - b.needed || a.name.localeCompare(b.name));
   return {
     code: game.code,
+    theme: game.theme ?? DEFAULT_THEME, // games from before there were themes are business ones
     round: game.round,
     roundAt: game.roundAt,
     players: room,
@@ -85,11 +88,13 @@ async function load(code) {
 
 async function createGame(body) {
   const name = cleanName(body.name);
+  const theme = body.theme ?? DEFAULT_THEME;
+  if (!isTheme(theme)) throw new HttpError(400, 'No such kind of bingo');
   const expires = Math.floor(now() / 1000) + LIFETIME;
-  const { token, player } = newPlayer(name, expires);
+  const { token, player } = newPlayer(name, expires, theme);
   for (let attempt = 0; attempt < 8; attempt++) {
     const code = newCode();
-    const game = { code, hostId: player.id, round: 1, roundAt: now(), createdAt: now(), expires };
+    const game = { code, theme, hostId: player.id, round: 1, roundAt: now(), createdAt: now(), expires };
     if (await store.createGame(code, game)) {
       await store.putPlayer(code, player);
       return json(201, { token, ...state(game, [player], player) });
@@ -102,7 +107,7 @@ async function join(code, body) {
   const name = cleanName(body.name);
   const { game, players } = await load(code);
   if (players.length >= MAX_PLAYERS) throw new HttpError(409, `This game is full (${MAX_PLAYERS} players)`);
-  const { token, player } = newPlayer(name, game.expires);
+  const { token, player } = newPlayer(name, game.expires, game.theme);
   await store.putPlayer(code, player);
   return json(201, { token, ...state(game, [...players, player], player) });
 }
@@ -136,7 +141,7 @@ async function newRound(code, token) {
   Object.assign(game, { round: game.round + 1, roundAt: now(), expires });
   await store.updateGame(code, { round: game.round, roundAt: game.roundAt, expires });
   await Promise.all(players.map(p => {
-    Object.assign(p, { card: deal(randomInt), marks: normaliseMarks(0), line: null, lineAt: null, expires });
+    Object.assign(p, { card: deal(randomInt, game.theme), marks: normaliseMarks(0), line: null, lineAt: null, expires });
     return store.updatePlayer(code, p.id, { card: p.card, marks: p.marks, line: null, lineAt: null, expires });
   }));
   return json(200, state(game, players, me));

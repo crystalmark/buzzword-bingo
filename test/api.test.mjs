@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { handler, useStore } from '../lambda/index.mjs';
 import { memoryStore } from '../lambda/store.mjs';
 import { LINES } from '../lambda/game.mjs';
+import { THEMES } from '../lambda/themes.mjs';
 
 beforeEach(() => {
   useStore(memoryStore());
@@ -29,6 +30,29 @@ test('a host starts a game and gets a code, a token and a card', async () => {
   assert.equal(r.you.card.length, 25);
   assert.equal(r.you.host, true);
   assert.deepEqual(r.players.map(p => p.name), ['Tim']);
+});
+
+test('a game is business bingo unless the host picks another kind, and everyone joining gets that kind', async () => {
+  const plain = await call('POST', '/games', { body: { name: 'Tim' } });
+  assert.equal(plain.theme, 'business');
+  const host = await call('POST', '/games', { body: { name: 'Tim', theme: 'physics' } });
+  assert.equal(host.theme, 'physics');
+  const jo = await call('POST', `/games/${host.code}/players`, { body: { name: 'Jo' } });
+  assert.equal(jo.theme, 'physics');
+  for (const card of [host.you.card, jo.you.card]) assert.ok(card.filter(Boolean).every(w => THEMES.physics.words.includes(w)));
+  const next = await call('POST', `/games/${host.code}/rounds`, { token: host.token });
+  assert.ok(next.you.card.filter(Boolean).every(w => THEMES.physics.words.includes(w)), 'a new round keeps the theme');
+});
+
+test('an unknown theme is refused', async () => {
+  assert.equal((await call('POST', '/games', { body: { name: 'Tim', theme: 'astrology' } })).status, 400);
+  assert.equal((await call('POST', '/games', { body: { name: 'Tim', theme: 'toString' } })).status, 400);
+});
+
+test('a winning line through the centre shows the theme’s free square', async () => {
+  const host = await call('POST', '/games', { body: { name: 'Tim', theme: 'film' } });
+  const r = await call('PUT', `/games/${host.code}/marks`, { body: { marks: lineMarks(LINES[2]) }, token: host.token });
+  assert.equal(r.players[0].line[2], THEMES.film.free);
 });
 
 test('a name is required, and trimmed', async () => {

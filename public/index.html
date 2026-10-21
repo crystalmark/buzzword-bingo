@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Buzzword Bingo — Crystalmark</title>
-<meta name="description" content="Buzzword Bingo for meetings. Start a game, share the code with colleagues, and race to be first to a line of cheesy corporate jargon.">
+<meta name="description" content="Buzzword Bingo for meetings, lectures, the surgery and movie night. Start a game, share the code, and race to be first to a line.">
 <meta name="theme-color" content="#f3efe6">
 <meta property="og:title" content="Buzzword Bingo">
 <meta property="og:description" content="You’ve been invited to a game of Buzzword Bingo. First to a line wins.">
@@ -26,11 +26,17 @@
   <!-- Home: start, join or play alone -->
   <main id="view-home" class="view" hidden>
     <div class="hero">
-      <p class="kicker">Meeting survival kit</p>
+      <p class="kicker" id="home-kicker">Meeting survival kit</p>
       <h1>Buzzword <em>Bingo.</em></h1>
-      <p class="lede">Everyone gets a different card of cheesy corporate jargon. Mark each one off as it’s said.
+      <p class="lede">Everyone gets a different card. Mark each word off as it’s said.
         <strong>First to a line wins</strong> — and really ought to say “Bingo” out loud.</p>
     </div>
+
+    <fieldset class="themes">
+      <legend>What kind of bingo?</legend>
+      <div class="theme-list" id="themes"></div>
+      <p class="theme-blurb" id="theme-blurb"></p>
+    </fieldset>
 
     <div class="panels">
       <form class="panel" id="form-start">
@@ -53,8 +59,8 @@
       <div class="panel solo">
         <span class="panel-id">03</span>
         <h2>Just me, thanks</h2>
-        <p>A card of your own, no scoreboard. For the all-hands where nobody else is paying attention either.</p>
-        <a class="btn" href="/bingo/solo" data-nav>Play solo</a>
+        <p>A card of your own, no scoreboard. For when nobody else is paying attention either.</p>
+        <a class="btn" href="/bingo/solo" id="solo-link" data-nav>Play solo</a>
       </div>
     </div>
   </main>
@@ -64,6 +70,7 @@
     <div class="hero compact">
       <p class="kicker">You’re invited</p>
       <h1>Game <em class="mono-code" id="invite-code"></em></h1>
+      <p class="invite-theme" id="invite-theme"></p>
       <p class="lede" id="invite-who"></p>
     </div>
     <form class="panel narrow" id="form-invite">
@@ -99,7 +106,7 @@
             <button class="btn small" id="btn-copy">Copy link</button>
           </div>
           <button class="btn small ghost" id="btn-share" hidden>Share…</button>
-          <p class="hint">They’ll each get a different card. Paste the link in the meeting chat.</p>
+          <p class="hint">They’ll each get a different card. Paste the link in the chat.</p>
         </section>
         <section class="room">
           <h3>The room <span id="room-count"></span></h3>

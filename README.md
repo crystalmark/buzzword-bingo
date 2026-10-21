@@ -1,10 +1,11 @@
 # Buzzword Bingo
 
-Bingo for meetings, at **https://crystalmark.co.uk/bingo/**. Start a game, send colleagues the four-letter code or the
-link (`crystalmark.co.uk/bingo/KPTZ`), and everyone gets a different card. There are six kinds: business jargon (the default), physics, chemistry, medical
-(what patients say at the surgery, or lecture jargon) and film clichés. The server
-timestamps each player's first line, so the room sees who really called it first — and the words on their line, for
-heckling. The host can deal everyone a fresh card for another round. There's a solo mode too, with no server involved.
+Bingo for meetings, lectures, the surgery and movie night, at **https://crystalmark.co.uk/bingo/**. Start a game,
+send the four-letter code or the link (`crystalmark.co.uk/bingo/KPTZ`), and everyone gets a different card. There are
+six kinds: business jargon (the default), physics, chemistry, medical (what patients say at the surgery, or lecture
+jargon) and film clichés. The server timestamps each player's first line, so the room sees who really called it first
+— and the words on their line, for heckling. The host can deal everyone a fresh card for another round. There's a solo
+mode too, with no server involved.
 
 No accounts: joining a game gives you a token, kept in localStorage so a reload puts you back in. Games vanish after a
 day (DynamoDB TTL).

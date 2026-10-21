@@ -1,7 +1,8 @@
 # Buzzword Bingo
 
 Bingo for meetings, at **https://crystalmark.co.uk/bingo/**. Start a game, send colleagues the four-letter code or the
-link (`crystalmark.co.uk/bingo/KPTZ`), and everyone gets a different card of cheesy corporate jargon. The server
+link (`crystalmark.co.uk/bingo/KPTZ`), and everyone gets a different card. There are six kinds: business jargon (the default), physics, chemistry, medical
+(what patients say at the surgery, or lecture jargon) and film clichés. The server
 timestamps each player's first line, so the room sees who really called it first — and the words on their line, for
 heckling. The host can deal everyone a fresh card for another round. There's a solo mode too, with no server involved.
 
@@ -22,7 +23,8 @@ No dependencies: the AWS SDK comes with the Lambda runtime and is only loaded th
 | Piece | Where | What |
 |---|---|---|
 | `public/` | S3 `crystalmark.co.uk/bingo/` | The page: plain HTML, CSS and ES modules, no build |
-| `lambda/game.mjs` | both | The rules: word list, dealing, lines. Copied to `/bingo/js/game.mjs` on deploy |
+| `lambda/game.mjs` | both | The rules: dealing, lines. Copied to `/bingo/js/` on deploy |
+| `lambda/themes.mjs` | both | The kinds of bingo and their words. Copied to `/bingo/js/` on deploy |
 | `lambda/index.mjs` | Lambda `buzzword-bingo-api` | The API (routes listed at the top of the file) |
 | `lambda/store.mjs` | | DynamoDB table `buzzword-bingo` (pk = game code, sk = `GAME` or `P#<player>`), or in memory |
 | `template.yaml` | stack `buzzword-bingo`, eu-west-2 | Table, function, HTTP API (throttled) |
@@ -42,7 +44,8 @@ deploy/deploy.sh       # the page (tests first)
 
 `deploy/cloudfront.sh --remove` takes the behaviours and origin off the distribution again.
 
-To change the words, edit `WORDS` in `lambda/game.mjs` and run both `deploy/api.sh` and `deploy/deploy.sh`.
+To change the words or add a kind of bingo, edit `lambda/themes.mjs` (`npm test` checks the lists) and run both
+`deploy/api.sh` and `deploy/deploy.sh`. Don't rename a kind's id: games store it.
 
 ## Licence
 

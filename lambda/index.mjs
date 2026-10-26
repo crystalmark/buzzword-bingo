@@ -10,8 +10,9 @@ import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto
 import { deal, normaliseMarks, completeLine, needed } from './game.mjs';
 import { DEFAULT_THEME, isTheme, themeOf } from './themes.mjs';
 import { dynamoStore } from './store.mjs';
+import { rudeName, rudeCode } from './moderation.mjs';
 
-const CODE_LETTERS = 'BCDFGHJKLMNPQRSTVWXZ'; // no vowels, so no words, rude or otherwise; easy to read out on a call
+const CODE_LETTERS = 'BCDFGHJKLMNPQRSTVWXZ'; // no vowels, so no words; easy to read out on a call
 const CODE_LENGTH = 4;
 const MAX_PLAYERS = 40;
 const MAX_NAME = 24;
@@ -22,7 +23,13 @@ export function useStore(s) { store = s; }
 
 const now = () => Date.now();
 const hash = token => createHash('sha256').update(token).digest('hex');
-const newCode = () => Array.from({ length: CODE_LENGTH }, () => CODE_LETTERS[randomInt(CODE_LETTERS.length)]).join('');
+// A random code, never one that reads as rude (moderation.mjs)
+export function newCode() {
+  for (;;) {
+    const code = Array.from({ length: CODE_LENGTH }, () => CODE_LETTERS[randomInt(CODE_LETTERS.length)]).join('');
+    if (!rudeCode(code)) return code;
+  }
+}
 
 class HttpError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -37,6 +44,7 @@ const json = (statusCode, body) => ({
 function cleanName(name) {
   const n = String(name ?? '').replace(/[\p{C}]/gu, '').replace(/\s+/g, ' ').trim().slice(0, MAX_NAME);
   if (!n) throw new HttpError(400, 'Give yourself a name');
+  if (rudeName(n)) throw new HttpError(400, 'Please pick a different name — everyone in the game can see it');
   return n;
 }
 

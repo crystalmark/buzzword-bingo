@@ -61,6 +61,16 @@ test('a name is required, and trimmed', async () => {
   assert.equal(r.you.name, 'Tim Squires');
 });
 
+test('a rude name is refused, whether starting a game or joining one', async () => {
+  const start = await call('POST', '/games', { body: { name: 'W@nker' } });
+  assert.equal(start.status, 400);
+  assert.match(start.error, /different name/);
+  const host = await call('POST', '/games', { body: { name: 'Charles Dickens' } });
+  assert.equal(host.status, 201);
+  assert.equal((await call('POST', `/games/${host.code}/players`, { body: { name: 'w a n k' } })).status, 400);
+  assert.equal((await call('GET', `/games/${host.code}`)).players.length, 1);
+});
+
 test('colleagues join with the code and get cards of their own', async () => {
   const host = await call('POST', '/games', { body: { name: 'Tim' } });
   const jo = await call('POST', `/games/${host.code.toLowerCase()}/players`, { body: { name: 'Jo' } });

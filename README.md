@@ -27,6 +27,7 @@ No dependencies: the AWS SDK comes with the Lambda runtime and is only loaded th
 | `lambda/game.mjs` | both | The rules: dealing, lines. Copied to `/bingo/js/` on deploy |
 | `lambda/themes.mjs` | both | The kinds of bingo and their words. Copied to `/bingo/js/` on deploy |
 | `lambda/index.mjs` | Lambda `buzzword-bingo-api` | The API (routes listed at the top of the file) |
+| `lambda/moderation.mjs` | Lambda | Refuses rude player names (disguises included, real surnames allowed) and rude-looking codes |
 | `lambda/store.mjs` | | DynamoDB table `buzzword-bingo` (pk = game code, sk = `GAME` or `P#<player>`), or in memory |
 | `template.yaml` | stack `buzzword-bingo`, eu-west-2 | Table, function, HTTP API (throttled) |
 | `deploy/bingo-index.js` | CloudFront Function | `/bingo/`, `/bingo/<CODE>`, `/bingo/solo` → `index.html` |

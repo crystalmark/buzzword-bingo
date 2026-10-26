@@ -221,3 +221,33 @@ test('the minimum number of players must be sensible, and themed games can have 
   assert.equal(themed.open, false);
   assert.equal(themed.kind.name, 'Physics');
 });
+
+// ---------- usage stats ----------
+
+test('each day’s games, players, bingos and rounds are counted — numbers only, nothing about who', async () => {
+  const store = memoryStore();
+  useStore(store);
+  const host = await call('POST', '/games', { body: { name: 'Priya Patel', theme: 'physics' } });
+  await call('POST', '/games', { body: { name: 'Dr Squires', words: OWN, minPlayers: 2 } });
+  await call('POST', '/games', { body: { name: 'W@nker' } }); // refused: not counted
+  const jo = await call('POST', `/games/${host.code}/players`, { body: { name: 'Jo' } });
+  await call('PUT', `/games/${host.code}/marks`, { body: { marks: lineMarks(LINES[0]) }, token: jo.token });
+  await call('PUT', `/games/${host.code}/marks`, { body: { marks: lineMarks(LINES[1]) }, token: jo.token }); // a second line: no second bingo
+  await call('POST', `/games/${host.code}/rounds`, { token: host.token });
+
+  const today = store.stats(new Date().toISOString().slice(0, 10));
+  assert.deepEqual(today, { games: 2, players: 3, theme_physics: 1, theme_custom: 1, locked: 1, bingos: 1, rounds: 1 });
+  assert.ok(Object.values(today).every(n => typeof n === 'number'));
+  assert.ok(!JSON.stringify(today).includes(host.code) && !JSON.stringify(today).includes('Priya'));
+});
+
+test('if counting fails, the game carries on', async () => {
+  const store = memoryStore();
+  store.count = async () => { throw new Error('stats are down'); };
+  useStore(store);
+  const errors = console.error;
+  console.error = () => {};
+  try {
+    assert.equal((await call('POST', '/games', { body: { name: 'Tim' } })).status, 201);
+  } finally { console.error = errors; }
+});

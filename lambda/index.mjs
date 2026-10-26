@@ -9,6 +9,7 @@
 //   POST /bingo/api/games/{code}/start             host only: unlock the squares now, however many have joined
 // Players prove who they are with the token they were given on joining, in X-Player-Token; only its hash is stored.
 // The server deals the cards and timestamps each player's first line, so "who called it first" isn't up to the browser.
+// Each day's games, players, bingos and rounds are counted (anonymously: numbers only) for scripts/stats.sh.
 import { createHash, randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import { deal, normaliseMarks, completeLine, needed } from './game.mjs';
 import { DEFAULT_THEME, isTheme, themeOf } from './themes.mjs';
@@ -132,6 +133,12 @@ function state(game, players, me) {
   };
 }
 
+// Usage, counted by the day. Counting never gets in the way of a game: if it fails, the game carries on.
+async function count(counts) {
+  try { await store.count(new Date(now()).toISOString().slice(0, 10), counts); }
+  catch (e) { console.error('stats', e); }
+}
+
 async function load(code) {
   const g = await store.load(code);
   if (!g) throw new HttpError(404, 'No game with that code — it may have finished');
@@ -156,6 +163,7 @@ async function createGame(body) {
     const game = { code, theme, words, title, minPlayers, hostId: player.id, round: 1, roundAt: now(), createdAt: now(), expires };
     if (await store.createGame(code, game)) {
       await store.putPlayer(code, player);
+      await count({ games: 1, players: 1, [`theme_${theme}`]: 1, ...(minPlayers > 1 && { locked: 1 }) });
       return json(201, { token, ...state(game, [player], player) });
     }
   }
@@ -168,6 +176,7 @@ async function join(code, body) {
   if (players.length >= MAX_PLAYERS) throw new HttpError(409, `This game is full (${MAX_PLAYERS} players)`);
   const { token, player } = newPlayer(name, game.expires, wordsOf(game));
   await store.putPlayer(code, player);
+  await count({ players: 1 });
   return json(201, { token, ...state(game, [...players, player], player) });
 }
 
@@ -192,6 +201,7 @@ async function mark(code, token, body) {
     }
   }
   await store.updatePlayer(code, me.id, patch);
+  if (patch.lineAt) await count({ bingos: 1 });
   return json(200, state(game, players, me));
 }
 
@@ -200,6 +210,7 @@ async function newRound(code, token) {
   const me = findMe(players, token);
   if (!me || me.id !== game.hostId) throw new HttpError(403, 'Only the host can start a new round');
   const expires = Math.floor(now() / 1000) + LIFETIME;
+  await count({ rounds: 1 });
   Object.assign(game, { round: game.round + 1, roundAt: now(), expires });
   await store.updateGame(code, { round: game.round, roundAt: game.roundAt, expires });
   await Promise.all(players.map(p => {

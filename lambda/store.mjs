@@ -1,12 +1,17 @@
 // Where games are kept. One DynamoDB item per game (sk GAME) and one per player (sk P#<id>), all under the game's code,
 // so a game and everyone in it is one Query. Items carry `expires` (epoch seconds), DynamoDB's TTL attribute, so old
 // games clear themselves away. memoryStore does the same in a Map, for the tests and the local server.
+// Usage is counted per day (UTC) in one item per day under pk STATS (never a game code: those are four letters), sk
+// DAY#<yyyy-mm-dd>, which never expires: numbers only — nothing about who played, or which game. scripts/stats.sh reads them.
 
 const GAME = 'GAME';
 const P = 'P#';
 
+export const STATS = 'STATS';
+
 export function memoryStore() {
   const games = new Map();
+  const days = new Map();
   const copy = v => structuredClone(v);
   return {
     async createGame(code, game) {
@@ -29,6 +34,12 @@ export function memoryStore() {
     async updateGame(code, patch) {
       Object.assign(games.get(code).game, copy(patch));
     },
+    async count(day, counts) {
+      const d = days.get(day) ?? {};
+      for (const [k, n] of Object.entries(counts)) d[k] = (d[k] ?? 0) + n;
+      days.set(day, d);
+    },
+    stats: day => copy(days.get(day) ?? {}),
   };
 }
 
@@ -84,5 +95,16 @@ export async function dynamoStore(table) {
     },
     updatePlayer: (code, id, patch) => update(code, P + id, patch),
     updateGame: (code, patch) => update(code, GAME, patch),
+    // Adds to the day's counters, creating the day's item if it's the first thing counted that day
+    async count(day, counts) {
+      const keys = Object.keys(counts);
+      await db.send(new UpdateCommand({
+        TableName: table,
+        Key: { pk: STATS, sk: `DAY#${day}` },
+        UpdateExpression: 'ADD ' + keys.map((k, i) => `#k${i} :v${i}`).join(', '),
+        ExpressionAttributeNames: Object.fromEntries(keys.map((k, i) => [`#k${i}`, k])),
+        ExpressionAttributeValues: Object.fromEntries(keys.map((k, i) => [`:v${i}`, counts[k]])),
+      }));
+    },
   };
 }

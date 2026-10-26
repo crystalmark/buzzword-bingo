@@ -56,6 +56,18 @@ deploy/deploy.sh       # the page (tests first)
 To change the words or add a kind of bingo, edit `lambda/themes.mjs` (`npm test` checks the lists) and run both
 `deploy/api.sh` and `deploy/deploy.sh`. Don't rename a kind's id: games store it.
 
+## Usage
+
+The Lambda counts each day's games (and of which kind), players, bingos called and new rounds, as numbers only —
+nothing about who played or which game — in the same table, under `pk = STATS`. Those counts never expire.
+
+```bash
+scripts/stats.sh          # the last 30 days, with totals and averages
+scripts/stats.sh 7        # the last week
+scripts/stats.sh all      # everything
+scripts/stats.sh --json   # the raw counts
+```
+
 ## Licence
 
 MIT (see `LICENSE`).

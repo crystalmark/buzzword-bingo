@@ -11,6 +11,8 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const PORT = Number(process.env.PORT ?? 8768);
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.mjs': 'text/javascript', '.js': 'text/javascript', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
 useStore(memoryStore());
+// The same Content-Security-Policy CloudFront sends, so anything it would block is blocked here too
+const CSP = JSON.parse(await readFile(join(ROOT, 'deploy/bingo-headers.json'), 'utf8')).SecurityHeadersConfig.ContentSecurityPolicy.ContentSecurityPolicy;
 
 // What deploy/bingo-index.js does on CloudFront: /bingo/ and game links (/bingo/KPTZ) get the page
 const pageFor = uri => (uri.endsWith('/') || !extname(uri) ? '/bingo/index.html' : uri);
@@ -31,10 +33,10 @@ createServer(async (req, res) => {
   if (!url.pathname.startsWith('/bingo/')) return res.writeHead(404).end('Not found');
   const rel = pageFor(url.pathname).slice('/bingo/'.length);
   // The rules and the words live with the Lambda; deploy/deploy.sh copies them to js/ for the site
-  const shared = ['js/game.mjs', 'js/themes.mjs'].includes(rel);
+  const shared = ['js/game.mjs', 'js/themes.mjs', 'js/moderation.mjs'].includes(rel);
   const file = shared ? join(ROOT, 'lambda', rel.slice(3)) : join(ROOT, 'public', normalize(rel).replace(/^(\.\.[/\\])+/, ''));
   try {
-    res.writeHead(200, { 'content-type': TYPES[extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-cache' })
+    res.writeHead(200, { 'content-type': TYPES[extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-cache', 'content-security-policy': CSP })
       .end(await readFile(file));
   } catch { res.writeHead(404).end('Not found'); }
 }).listen(PORT, () => console.log(`Buzzword Bingo on http://localhost:${PORT}/bingo/`));

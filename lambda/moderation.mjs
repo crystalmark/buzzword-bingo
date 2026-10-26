@@ -1,5 +1,6 @@
-// Keeping it safe for work. Player names are the only free text anyone else sees, and game codes are four random
-// consonants, so those are the two things checked here.
+// Keeping it safe for work. Player names and the words on a custom card are the free text other players see, and
+// game codes are four random consonants, so those are what's checked here. This file is shared with the page, which
+// checks custom words as they're added; the Lambda checks everything again.
 //
 // Names: rude words are caught through the usual disguises (w@nk3r, w.a.n.k, w a n k, waaank, f**k), but real names
 // with rude letters inside them — Dickens, Hancock, Cockburn, Scunthorpe, Dikshit, Swankie, Cumberbatch — get through,
@@ -46,12 +47,15 @@ function readings(name) {
   return out;
 }
 
-export function rudeName(name) {
-  return readings(name).some(w => {
-    const scrubbed = INNOCENT.reduce((s, ok) => s.replaceAll(ok, '-'), w);
-    return ANYWHERE_RE.test(scrubbed) || WHOLE_RE.test(w);
-  });
-}
+const swears = w => ANYWHERE_RE.test(INNOCENT.reduce((s, ok) => s.replaceAll(ok, '-'), w));
+
+export const rudeName = name => readings(name).some(w => swears(w) || WHOLE_RE.test(w));
+
+// A word for a custom card, taken from someone's own slides. Medical and science talks are full of words the name check
+// refuses (penis, vagina, finger prick, spastic paraplegia), so only swearing and slurs are refused here.
+const SLUR_RE = new RegExp(`^(?:${['fags?', 'paki(s)?', 'spaz', 'kikes?', 'chinks?', 'wogs?', 'gooks?', 'tranny', 'retards?']
+  .map(w => w.replace(/([a-z])(\?)?/g, (_, c, opt) => `[${c}*]${opt ? '*' : '+'}`)).join('|')})$`);
+export const rudeWord = word => readings(word).some(w => swears(w) || SLUR_RE.test(w));
 
 // Letter runs that read as rude even without vowels. A code containing one is never handed out.
 const RUDE_CODE = ['WNK', 'FCK', 'FK', 'CNT', 'KNT', 'SHT', 'TWT', 'CCK', 'KCK', 'DCK', 'DK', 'PRK', 'PSS', 'KNB',

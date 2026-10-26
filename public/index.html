@@ -62,7 +62,58 @@
         <p>A card of your own, no scoreboard. For when nobody else is paying attention either.</p>
         <a class="btn" href="/bingo/solo" id="solo-link" data-nav>Play solo</a>
       </div>
+
+      <div class="panel own" id="own-drop">
+        <span class="panel-id">04</span>
+        <h2>From your own slides</h2>
+        <p>Giving a talk? Pick a PowerPoint, Word document, PDF or notes, and the buzzwords for your audience’s cards
+          are picked out of it. You choose which to keep. <strong>Your file is read on this device and never
+          uploaded</strong> — only the words you keep are sent.</p>
+        <div class="own-pick">
+          <label class="btn primary" for="own-file">Choose a file…</label>
+          <span class="hint">or drop it here · .pptx .docx .pdf .odp .odt .txt .md</span>
+        </div>
+        <input type="file" id="own-file" class="visually-hidden">
+      </div>
     </div>
+  </main>
+
+  <!-- Your own words: check the buzzwords picked from your document, then start a game with them -->
+  <main id="view-own" class="view" hidden>
+    <div class="hero compact">
+      <p class="kicker">Your own bingo</p>
+      <h1>Pick your <em>buzzwords.</em></h1>
+      <p class="lede" id="own-found"></p>
+    </div>
+    <form id="form-own" class="own-form">
+      <label>Title, shown to players <input name="title" id="own-title" maxlength="60" placeholder="e.g. Diabetes update"></label>
+
+      <section class="own-words">
+        <h3>On the cards <span id="own-count"></span></h3>
+        <ul class="chips" id="own-chosen"></ul>
+        <div class="add-row">
+          <input id="own-add" maxlength="34" placeholder="Add a buzzword of your own…" aria-label="Add a buzzword">
+          <button type="button" class="btn small" id="btn-own-add">Add</button>
+        </div>
+      </section>
+
+      <section class="own-words more" id="own-more-section">
+        <h3>More from your document <span>tap one to add it</span></h3>
+        <ul class="chips" id="own-more"></ul>
+      </section>
+
+      <section class="own-settings">
+        <label class="inline">Unlock the squares once
+          <input type="number" name="minPlayers" id="own-min" min="1" max="100" value="1" inputmode="numeric" required>
+          people have joined</label>
+        <p class="hint">Including you. 1 means straight away; if fewer turn up, you can start it yourself.</p>
+        <label>Your name <input name="name" autocomplete="nickname" maxlength="24" required placeholder="e.g. Dr Squires"></label>
+        <div class="own-go">
+          <button class="btn primary" type="submit" id="btn-own-start">Start the game</button>
+          <a class="quiet" href="/bingo/" data-nav>Cancel</a>
+        </div>
+      </section>
+    </form>
   </main>
 
   <!-- Invited: arrived on a game link without having joined yet -->
@@ -88,6 +139,12 @@
       <div class="card-wrap">
         <div class="card" id="card" role="grid" aria-label="Your bingo card"></div>
         <div class="stamp" id="stamp" aria-hidden="true">Bingo!</div>
+        <div class="waiting" id="waiting" hidden>
+          <div class="waiting-box">
+            <p id="waiting-text"></p>
+            <button class="btn small primary" id="btn-start-now" hidden>Start now</button>
+          </div>
+        </div>
         <p class="card-foot">
           <span id="card-status"></span>
           <span class="card-actions">

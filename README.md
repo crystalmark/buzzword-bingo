@@ -7,6 +7,11 @@ jargon) and film clichés. The server timestamps each player's first line, so th
 — and the words on their line, for heckling. The host can deal everyone a fresh card for another round. There's a solo
 mode too, with no server involved.
 
+**From your own slides:** giving a talk, you can pick a PowerPoint, Word, PDF, OpenOffice or text file and the buzzwords
+are picked out of it — slide titles, text and speaker notes — for you to trim and add to before starting the game.
+The file is read in the browser and never uploaded; only the words kept are sent. The squares can stay locked until a
+set number of people have joined, with a Start now button for the host if fewer turn up. Games hold up to 100 players.
+
 No accounts: joining a game gives you a token, kept in localStorage so a reload puts you back in. Games vanish after a
 day (DynamoDB TTL).
 
@@ -27,7 +32,9 @@ No dependencies: the AWS SDK comes with the Lambda runtime and is only loaded th
 | `lambda/game.mjs` | both | The rules: dealing, lines. Copied to `/bingo/js/` on deploy |
 | `lambda/themes.mjs` | both | The kinds of bingo and their words. Copied to `/bingo/js/` on deploy |
 | `lambda/index.mjs` | Lambda `buzzword-bingo-api` | The API (routes listed at the top of the file) |
-| `lambda/moderation.mjs` | Lambda | Refuses rude player names (disguises included, real surnames allowed) and rude-looking codes |
+| `lambda/moderation.mjs` | both | Refuses rude player names (disguises included, real surnames allowed), swearing and slurs in custom words, and rude-looking codes. Copied to `/bingo/js/` on deploy |
+| `public/js/extract.mjs` | page | Reads a document's text in the browser: .pptx/.docx/.odp/.odt via `zip.mjs`, PDF via pdf.js (`public/js/vendor/pdfjs`, Apache 2.0, loaded only for PDFs) |
+| `public/js/keywords.mjs` | page | Picks the buzzwords out of that text |
 | `lambda/store.mjs` | | DynamoDB table `buzzword-bingo` (pk = game code, sk = `GAME` or `P#<player>`), or in memory |
 | `template.yaml` | stack `buzzword-bingo`, eu-west-2 | Table, function, HTTP API (throttled) |
 | `deploy/bingo-index.js` | CloudFront Function | `/bingo/`, `/bingo/<CODE>`, `/bingo/solo` → `index.html` |

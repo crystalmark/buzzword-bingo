@@ -42,10 +42,11 @@ Resources:
   BingoApi:
     Type: AWS::Serverless::HttpApi
     Properties:
-      # Generous for meetings, tight enough that nobody can run up a bill: every player polls every 3 s
+      # Generous for meetings and talks (a game of 100 polls about 17 times a second), tight enough that nobody can
+      # run up a bill
       DefaultRouteSettings:
-        ThrottlingBurstLimit: 100
-        ThrottlingRateLimit: 50
+        ThrottlingBurstLimit: 200
+        ThrottlingRateLimit: 100
 
   BingoFunction:
     Type: AWS::Serverless::Function

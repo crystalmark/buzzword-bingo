@@ -17,10 +17,10 @@ export const LINES = [
 const ALL = (1 << (SIZE * SIZE)) - 1;
 const bit = i => 1 << i;
 
-// A card: 24 different words from the theme, picked by randomInt(n) (an integer from 0 to n - 1), with null in the
-// free square
+// A card: 24 different words from the theme (or from a list of a game's own words), picked by randomInt(n) (an integer
+// from 0 to n - 1), with null in the free square
 export function deal(randomInt, theme) {
-  const words = themeOf(theme).words.slice();
+  const words = (Array.isArray(theme) ? theme : themeOf(theme).words).slice();
   for (let i = words.length - 1; i > 0; i--) {
     const j = randomInt(i + 1);
     [words[i], words[j]] = [words[j], words[i]];

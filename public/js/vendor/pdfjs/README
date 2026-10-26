@@ -1,0 +1,2 @@
+pdf.js 4.10.38 (pdfjs-dist on npm, sha512 checked), Mozilla, Apache License 2.0 (LICENSE).
+Used by ../../extract.mjs to read the text of PDFs in the browser; loaded only when a PDF is opened.

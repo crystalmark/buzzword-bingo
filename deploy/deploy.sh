@@ -16,7 +16,7 @@ DRY=; [ "${1:-}" = --dryrun ] && DRY=--dryrun
 npm test > /dev/null 2>&1 || { echo "Tests failed: run npm test"; exit 1; }
 STAGE=$(mktemp -d); trap 'rm -rf "$STAGE"' EXIT
 cp -R public/. "$STAGE/"
-cp lambda/game.mjs lambda/themes.mjs "$STAGE/js/"   # the rules and the words are shared with the Lambda
+cp lambda/game.mjs lambda/themes.mjs lambda/moderation.mjs "$STAGE/js/"   # shared with the Lambda
 find "$STAGE" -name .DS_Store -delete
 
 # no-cache: browsers and CloudFront revalidate on every load (cheap 304s), so a deploy shows up straight away.

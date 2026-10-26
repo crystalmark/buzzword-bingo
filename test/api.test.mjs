@@ -154,3 +154,70 @@ test('bad JSON and unknown routes', async () => {
   assert.equal(r.statusCode, 400);
   assert.equal((await call('DELETE', '/games')).status, 404);
 });
+
+// ---------- a game of your own words ----------
+
+const OWN = Array.from({ length: 30 }, (_, i) => `Keyword ${i + 1}`);
+
+test('a game of your own words deals cards from them, under its title, with its own free square', async () => {
+  const host = await call('POST', '/games', { body: { name: 'Dr Squires', words: OWN, title: 'Diabetes update' } });
+  assert.equal(host.status, 201);
+  assert.equal(host.theme, 'custom');
+  assert.deepEqual(host.kind, { name: 'Diabetes update', free: 'Free square ★' });
+  const jo = await call('POST', `/games/${host.code}/players`, { body: { name: 'Jo' } });
+  for (const card of [host.you.card, jo.you.card]) assert.ok(card.filter(Boolean).every(w => OWN.includes(w)));
+  const next = await call('POST', `/games/${host.code}/rounds`, { token: host.token });
+  assert.ok(next.you.card.filter(Boolean).every(w => OWN.includes(w)), 'a new round deals from the same words');
+});
+
+test('own words are tidied and de-duplicated, and need at least 24 different ones', async () => {
+  const messy = [...OWN.slice(0, 23), '  keyword 1 ', 'KEYWORD 2', '', '   '];
+  const few = await call('POST', '/games', { body: { name: 'Tim', words: messy } });
+  assert.equal(few.status, 400);
+  assert.match(few.error, /at least 24 different words \(there are 23\)/);
+  const ok = await call('POST', '/games', { body: { name: 'Tim', words: [...messy, '  Insulin   resistance '] } });
+  assert.equal(ok.status, 201);
+  assert.ok(ok.you.card.includes('Insulin resistance') || ok.you.card.filter(Boolean).length === 24);
+  assert.equal(ok.kind.name, 'Your own words', 'no title, a sensible name');
+});
+
+test('own words are refused when too long, too many, rude or not a list — but anatomy is fine', async () => {
+  const bad = async words => (await call('POST', '/games', { body: { name: 'Tim', words } }));
+  assert.match((await bad([...OWN, 'x'.repeat(35)])).error, /too long/);
+  assert.equal((await bad(Array.from({ length: 201 }, (_, i) => `w${i}`))).status, 400);
+  assert.match((await bad([...OWN, 'Bullshit bingo'])).error, /can’t go on a card/);
+  assert.equal((await bad('not a list')).status, 400);
+  assert.equal((await bad([...OWN, 'Penis', 'Vagina', 'Finger prick', 'Spastic paraplegia'])).status, 201);
+  assert.equal((await call('POST', '/games', { body: { name: 'Tim', words: OWN, title: 'Wank' } })).status, 400);
+});
+
+test('squares stay locked until the minimum number of players have joined', async () => {
+  const host = await call('POST', '/games', { body: { name: 'Dr Squires', words: OWN, minPlayers: 3 } });
+  assert.equal(host.open, false);
+  assert.equal(host.minPlayers, 3);
+  const early = await call('PUT', `/games/${host.code}/marks`, { body: { marks: 1 }, token: host.token });
+  assert.equal(early.status, 423);
+  assert.match(early.error, /when 3 have joined \(1 so far\)/);
+  await call('POST', `/games/${host.code}/players`, { body: { name: 'Jo' } });
+  const third = await call('POST', `/games/${host.code}/players`, { body: { name: 'Sam' } });
+  assert.equal(third.open, true);
+  assert.equal((await call('PUT', `/games/${host.code}/marks`, { body: { marks: 1 }, token: third.token })).status, 200);
+});
+
+test('the host can unlock the squares early; nobody else can', async () => {
+  const host = await call('POST', '/games', { body: { name: 'Dr Squires', words: OWN, minPlayers: 50 } });
+  const jo = await call('POST', `/games/${host.code}/players`, { body: { name: 'Jo' } });
+  assert.equal((await call('POST', `/games/${host.code}/start`, { token: jo.token })).status, 403);
+  const started = await call('POST', `/games/${host.code}/start`, { token: host.token });
+  assert.equal(started.open, true);
+  assert.equal((await call('PUT', `/games/${host.code}/marks`, { body: { marks: 1 }, token: jo.token })).status, 200);
+});
+
+test('the minimum number of players must be sensible, and themed games can have one too', async () => {
+  for (const minPlayers of [0, 101, 2.5, '3']) {
+    assert.equal((await call('POST', '/games', { body: { name: 'Tim', minPlayers } })).status, 400, String(minPlayers));
+  }
+  const themed = await call('POST', '/games', { body: { name: 'Tim', theme: 'physics', minPlayers: 2 } });
+  assert.equal(themed.open, false);
+  assert.equal(themed.kind.name, 'Physics');
+});
